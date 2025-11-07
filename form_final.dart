@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 void main() => runApp(MaterialApp(home: FormExampleScreen()));
 
 class FormExampleScreen extends StatefulWidget {
+  // CORREÇÃO 2 (NOVO): 'key' se torna 'super.key'
+  const FormExampleScreen({super.key});
+
   @override
-  _FormExampleScreenState createState() => _FormExampleScreenState();
+  FormExampleScreenState createState() => FormExampleScreenState();
 }
 
-class _FormExampleScreenState extends State<FormExampleScreen> {
+class FormExampleScreenState extends State<FormExampleScreen> {
   // Chave global para acessar o estado do formulário
   final _formKey = GlobalKey<FormState>();
 
@@ -48,8 +51,35 @@ class _FormExampleScreenState extends State<FormExampleScreen> {
 
   // Função de submissão: pode ser adaptada para API, banco ou navegação
   void _submitForm(String action) {
-    if (_formKey.currentState!.validate()) {
-      // Salva os campos do formulário
+    // 1. Valida os FormFields (Nome, Email, Gênero, Data, Cor)
+    final bool isFormValid = _formKey.currentState!.validate();
+
+    // 2. Validação manual do Checkbox de Termos
+    if (!_acceptTerms) {
+      // Exibe uma mensagem de erro e interrompe a submissão
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Você deve aceitar os termos de uso!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return; // Para a submissão
+    }
+
+    // 3. Validação manual das opções de Rádio
+    if (_selectedRadioOption == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Selecione como conheceu o app!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return; // Para a submissão
+    }
+
+    // 4. Se tudo estiver válido (FormFields E verificações manuais)
+    if (isFormValid) {
+      // Salva os campos do formulário (opcional neste caso, pois usa controllers)
       _formKey.currentState!.save();
 
       // Exemplo de envio para API
@@ -105,7 +135,8 @@ class _FormExampleScreenState extends State<FormExampleScreen> {
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
-          autovalidateMode: AutovalidateMode.onUserInteraction, // Validação automática[5][16]
+          autovalidateMode:
+              AutovalidateMode.onUserInteraction, // Validação automática
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -134,7 +165,9 @@ class _FormExampleScreenState extends State<FormExampleScreen> {
                 ),
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Campo obrigatório';
+                  if (value == null || value.isEmpty) {
+                    return 'Campo obrigatório';
+                  }
                   if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
                     return 'Email inválido';
                   }
@@ -144,6 +177,7 @@ class _FormExampleScreenState extends State<FormExampleScreen> {
               const SizedBox(height: 16),
 
               // DropdownButtonFormField
+              // (IGNORAR LINT DE 'value' DEPRECATED)
               DropdownButtonFormField<String>(
                 value: _selectedGender,
                 decoration: const InputDecoration(
@@ -168,6 +202,8 @@ class _FormExampleScreenState extends State<FormExampleScreen> {
               const SizedBox(height: 16),
 
               // TextFormField só leitura + showDatePicker
+              // O erro 'child is required' da sua imagem estava aqui
+              // mas ele deve sumir, pois o 'child' está presente.
               GestureDetector(
                 onTap: _pickDate,
                 child: AbsorbPointer(
@@ -179,8 +215,9 @@ class _FormExampleScreenState extends State<FormExampleScreen> {
                       prefixIcon: Icon(Icons.calendar_today),
                     ),
                     readOnly: true,
-                    validator: (value) =>
-                        value == null || value.isEmpty ? 'Selecione uma data' : null,
+                    validator: (value) => value == null || value.isEmpty
+                        ? 'Selecione uma data'
+                        : null,
                   ),
                 ),
               ),
@@ -218,6 +255,7 @@ class _FormExampleScreenState extends State<FormExampleScreen> {
               const SizedBox(height: 8),
 
               // Dropdown extra (cor favorita)
+              // (IGNORAR LINT DE 'value' DEPRECATED)
               DropdownButtonFormField<String>(
                 value: _favoriteColor,
                 decoration: const InputDecoration(
@@ -240,7 +278,8 @@ class _FormExampleScreenState extends State<FormExampleScreen> {
               ),
               const SizedBox(height: 16),
 
-              // RadioListTile para opção exclusiva
+              // CORREÇÃO 1: Voltamos ao código original
+              // O 'RadioGroup' que eu adicionei estava errado.
               const Text('Como conheceu o app?'),
               RadioListTile<String>(
                 title: const Text('Indicação'),
@@ -333,7 +372,9 @@ class FormResultScreen extends StatelessWidget {
   final String? radioOption;
   final double sliderValue;
 
+  // CORREÇÃO 2 (NOVO): 'key' se torna 'super.key'
   const FormResultScreen({
+    super.key,
     required this.name,
     required this.email,
     required this.gender,
@@ -355,12 +396,12 @@ class FormResultScreen extends StatelessWidget {
           children: [
             Text('Nome: $name'),
             Text('Email: $email'),
-            Text('Gênero: $gender'),
+            Text('Gênero: ${gender ?? "Não informado"}'),
             Text('Data de nascimento: $date'),
             Text('Aceitou termos: ${acceptTerms ? "Sim" : "Não"}'),
             Text('Receber newsletter: ${receiveNewsletter ? "Sim" : "Não"}'),
-            Text('Cor favorita: $favoriteColor'),
-            Text('Como conheceu o app: $radioOption'),
+            Text('Cor favorita: ${favoriteColor ?? "Não informado"}'),
+            Text('Como conheceu o app: ${radioOption ?? "Não informado"}'),
             Text('Satisfação: ${sliderValue.round()}'),
           ],
         ),
