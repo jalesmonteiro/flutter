@@ -31,11 +31,27 @@ class _CampoNicknamePageState extends State<CampoNicknamePage> {
   }
 
   void _aoMudarTexto() {
-    final texto = _nicknameController.text;
-    setState(() {
-      _mensagemStatus = 'Tamanho atual: ${texto.length} caracteres';
-    });
+  final texto = _nicknameController.text;
+
+  // Lista simples de caracteres permitidos
+  const permitidos = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-';
+
+  // Mantém apenas os caracteres válidos
+  final textoLimpo = texto.split('').where((caractere) => permitidos.contains(caractere)).join('');
+
+  // Ponto crítico: evita loop infinito
+  if (texto != textoLimpo) {
+    _nicknameController.value = TextEditingValue(
+      text: textoLimpo,
+      selection: TextSelection.collapsed(offset: textoLimpo.length),
+    );
+    return;
   }
+
+  setState(() {
+    _mensagemStatus = 'Tamanho atual: ${textoLimpo.length} caracteres';
+  });
+}
 
   @override
   void dispose() {
@@ -77,11 +93,7 @@ class _CampoNicknamePageState extends State<CampoNicknamePage> {
                 helperText: 'Apenas letras, números, _, . e -',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.person_outline),
-              ),
-              // Expressão regular que restringe os caracteres permitidos
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9._-]')),
-              ],
+              )
             ),
             const SizedBox(height: 8),
             Text(
